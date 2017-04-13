@@ -2,9 +2,10 @@
 # Build script to install p4est, trilinos, deal.ii, and aspect on cluster.
 # Modified from deal.ii dockerfiles.
 
+# Define build directory, installation prefix, and number of build threads
 BUILD_DIR=$PWD
-INSTALL_PREFIX=/home/rmaxwell/libs
-CPU=20
+INSTALL_PREFIX=~/libs
+CPU=40
 
 # load modules
 module purge
@@ -29,13 +30,47 @@ cd $BUILD_DIR && \
 wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-$HDF5_VERSION.tar.bz2 && \
     tar xjf hdf5-$HDF5_VERSION.tar.bz2 && \
     cd hdf5-$HDF5_VERSION &&  \
-    ./configure --enable-parallel \
-                --enable-shared \
-                --prefix=$INSTALL_PREFIX/hdf5-$HDF5_VERSION/ && \
+    CC=mpicc CXX=mpicxx ./configure \
+         --enable-parallel \
+         --enable-shared \
+         --prefix=$INSTALL_PREFIX/hdf5-$HDF5_VERSION/ && \
     make -j$CPU && make install && \
     cd $BUILD_DIR && \
     rm -rf hdf5-$HDF5_VERSION hdf5-$HDF5_VERSION.tar.bz2 
 export HDF5_DIR=$INSTALL_PREFIX/hdf5-$HDF5_VERSION
+
+# download and build netcdf
+# download and build netcdf and netcdf-cxx4
+#VER=4.4.1.1
+#wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VER.tar.gz && \
+#tar -xzf netcdf-$VER.tar.gz && \
+#cd netcdf-$VER && \
+#mkdir build && cd build && \
+#    cmake \
+#    -DCMAKE_BUILD_TYPE=Release \
+#    -DCMAKE_C_COMPILER=mpicc \
+#    -DCMAKE_CXX_COMPILER=mpicc \
+#    -DCMAKE_PREFIX_PATH=$HDF5_DIR \
+#    -DCMAKE_INSTALL_PREFIX:PATH=$INSTALL_PREFIX/netcdf-$VER \
+#    -DENABLE_NETCDF_4=ON \
+#    -DHDF5_DIR:PATH=$HDF5_DIR \
+#    -DHDF5_INCLUDE_DIRS=$HDF5_DIR/include \
+#    .. && \
+#    make -j$CPU install && \
+#    cd $BUILD_DIR && \
+#    rm -rf netcdf-$VER netcdf-$VER.tar.gz
+
+#NETCDF_CXX_VER=4.3.0
+#cd $BUILD_DIR
+#wget https://github.com/Unidata/netcdf-cxx4/archive/v4.3.0.tar.gz && \
+#tar -xzf v4.3.0.tar.gz && \
+#cd netcdf-cxx4-$NETCDF_VER && \
+#mkdir build && cd build && \
+#cmake \
+#    -DCMAKE_INSTALL_PREFIX:PATH=$INSTALL_PREFIX/netcdf-cxx4-$NETCDF_CXX_VER \
+#    -D CMAKE_CXX_FLAGS="-O3" \
+#    -D CMAKE_C_FLAGS="-O3" \
+#    ..
 
 # download and build trilinos
 export TRILINOS_VERSION=12-8-1
@@ -82,11 +117,15 @@ wget https://github.com/trilinos/Trilinos/archive/trilinos-release-$TRILINOS_VER
      -D Trilinos_ENABLE_Tpetra:BOOL=ON \
      -D Trilinos_ENABLE_TrilinosCouplings:BOOL=ON \
      -D Trilinos_EXTRA_LINK_FLAGS="-lgfortran" \
-     -D Trilinos_VERBOSE_CONFIGURE=FALSE \
-     .. && \
+     -D Trilinos_VERBOSE_CONFIGURE=TRUE \
+    -DLAPACK_LIBRARY_DIRS=/opt/intel/mkl/lib/intel64 \
+    -DLAPACK_LIBRARY_NAMES="" \
+    -D BLAS_LIBRARY_DIRS=/opt/intel/mkl/lib/intel64 \
+    -D BLAS_LIBRARY_NAMES="mkl_intel_lp64;mkl_sequential;mkl_core;mkl_def" \
+     .. 
    make -j$CPU && make install && \
    cd $BUILD_DIR && \
-   rm -rf Trilinos-trilinos-release-* &&\
+   rm -rf Trilinos-trilinos-release-* && \
    rm -rf trilinos-release-*
 export TRILINOS_DIR=$INSTALL_PREFIX/trilinos-$TRILINOS_VERSION
 
@@ -102,7 +141,8 @@ git clone https://github.com/dealii/dealii.git dealii-$VER-src && \
           -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX/dealii-$VER \
           -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
           -DTRILINOS_DIR=$TRILINOS_DIR \
-          -DP4est_DIR=$P4EST_DIR \
+          -DP4EST_DIR=$P4EST_DIR \
+          -DHDF5_DIR=$HDF5_DIR \
           ../ && \
     make -j$CPU install && \
     cd $BUILD_DIR && rm -rf dealii-$VER-src && \
