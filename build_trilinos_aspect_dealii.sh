@@ -4,7 +4,7 @@
 
 # Define build directory, installation prefix, and number of build threads
 BUILD_DIR=$PWD
-INSTALL_PREFIX=~/libs
+INSTALL_PREFIX=~/libs2
 CPU=40
 
 # load modules
@@ -25,52 +25,55 @@ wget http://www.dealii.org/developer/external-libs/p4est-setup.sh && \
 
 export P4EST_DIR=$INSTALL_PREFIX/p4est-$P4EST_VERSION && \
 # download and build hdf5
-export HDF5_VERSION=1.10.0-patch1 && \
-cd $BUILD_DIR && \
-wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-$HDF5_VERSION.tar.bz2 && \
-    tar xjf hdf5-$HDF5_VERSION.tar.bz2 && \
-    cd hdf5-$HDF5_VERSION &&  \
-    CC=mpicc CXX=mpicxx ./configure \
-         --enable-parallel \
-         --enable-shared \
-         --prefix=$INSTALL_PREFIX/hdf5-$HDF5_VERSION/ && \
-    make -j$CPU && make install && \
-    cd $BUILD_DIR && \
-    rm -rf hdf5-$HDF5_VERSION hdf5-$HDF5_VERSION.tar.bz2 
-export HDF5_DIR=$INSTALL_PREFIX/hdf5-$HDF5_VERSION
+#export HDF5_VERSION=1.10.0-patch1 && \
+#cd $BUILD_DIR && \
+#wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-$HDF5_VERSION.tar.bz2 && \
+#    tar xjf hdf5-$HDF5_VERSION.tar.bz2 && \
+#    cd hdf5-$HDF5_VERSION &&  \
+#    CC=mpicc CXX=mpicxx ./configure \
+#         --enable-parallel \
+#         --enable-shared \
+#         --prefix=$INSTALL_PREFIX/hdf5-$HDF5_VERSION/ && \
+#    make -j$CPU && make install && \
+#    cd $BUILD_DIR && \
+#    rm -rf hdf5-$HDF5_VERSION hdf5-$HDF5_VERSION.tar.bz2 
+#export HDF5_DIR=$INSTALL_PREFIX/hdf5-$HDF5_VERSION
 
 # download and build netcdf
 # download and build netcdf and netcdf-cxx4
-#VER=4.4.1.1
-#wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VER.tar.gz && \
-#tar -xzf netcdf-$VER.tar.gz && \
-#cd netcdf-$VER && \
-#mkdir build && cd build && \
-#    cmake \
-#    -DCMAKE_BUILD_TYPE=Release \
-#    -DCMAKE_C_COMPILER=mpicc \
-#    -DCMAKE_CXX_COMPILER=mpicc \
-#    -DCMAKE_PREFIX_PATH=$HDF5_DIR \
-#    -DCMAKE_INSTALL_PREFIX:PATH=$INSTALL_PREFIX/netcdf-$VER \
-#    -DENABLE_NETCDF_4=ON \
-#    -DHDF5_DIR:PATH=$HDF5_DIR \
-#    -DHDF5_INCLUDE_DIRS=$HDF5_DIR/include \
-#    .. && \
-#    make -j$CPU install && \
-#    cd $BUILD_DIR && \
-#    rm -rf netcdf-$VER netcdf-$VER.tar.gz
+VER=4.4.1.1
+wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VER.tar.gz && \
+tar -xzf netcdf-$VER.tar.gz && \
+cd netcdf-$VER && \
+mkdir build && cd build && \
+    cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_COMPILER=mpicc \
+    -DCMAKE_CXX_COMPILER=mpicc \
+    -DCMAKE_PREFIX_PATH=$HDF5_DIR \
+    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX/netcdf-$VER \
+    -DENABLE_NETCDF_4=ON \
+    .. && \
+    make -j$CPU install && \
+    cd $BUILD_DIR && \
+    rm -rf netcdf-$VER netcdf-$VER.tar.gz
+NETCDF_DIR=$INSTALL_PREFIX/netcdf-$VER
 
-#NETCDF_CXX_VER=4.3.0
-#cd $BUILD_DIR
-#wget https://github.com/Unidata/netcdf-cxx4/archive/v4.3.0.tar.gz && \
-#tar -xzf v4.3.0.tar.gz && \
-#cd netcdf-cxx4-$NETCDF_VER && \
-#mkdir build && cd build && \
-#cmake \
-#    -DCMAKE_INSTALL_PREFIX:PATH=$INSTALL_PREFIX/netcdf-cxx4-$NETCDF_CXX_VER \
-#    -D CMAKE_CXX_FLAGS="-O3" \
-#    -D CMAKE_C_FLAGS="-O3" \
-#    ..
+NETCDF_CXX_VER=4.3.0
+cd $BUILD_DIR
+wget https://github.com/Unidata/netcdf-cxx4/archive/v4.3.0.tar.gz && \
+tar -xzf v4.3.0.tar.gz && \
+cd netcdf-cxx4-$NETCDF_CXX_VER && \
+mkdir build && cd build && \
+cmake \
+    -DCMAKE_PREFIX_PATH=$NETCDF_DIR \
+    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX/netcdf-cxx4-$NETCDF_CXX_VER \
+    -D CMAKE_CXX_FLAGS="-O3" \
+    -D CMAKE_C_FLAGS="-O3" \
+    ..
+make -j$CPU install && \
+    cd $BUILD_DIR && \
+    rm -rf netcdf-cxx4-$NETCDF_CXX_VER
 
 # download and build trilinos
 export TRILINOS_VERSION=12-8-1
@@ -122,7 +125,8 @@ wget https://github.com/trilinos/Trilinos/archive/trilinos-release-$TRILINOS_VER
     -DLAPACK_LIBRARY_NAMES="" \
     -D BLAS_LIBRARY_DIRS=/opt/intel/mkl/lib/intel64 \
     -D BLAS_LIBRARY_NAMES="mkl_intel_lp64;mkl_sequential;mkl_core;mkl_def" \
-     .. 
+     .. && \
+
    make -j$CPU && make install && \
    cd $BUILD_DIR && \
    rm -rf Trilinos-trilinos-release-* && \
