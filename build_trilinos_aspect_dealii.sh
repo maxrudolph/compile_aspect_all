@@ -3,16 +3,17 @@
 # Modified from deal.ii dockerfiles.
 
 # Define build directory, installation prefix, and number of build threads
-BUILD_DIR=$PWD
-INSTALL_PREFIX=~/libs2
+BUILD_DIR=$PWD/build
+INSTALL_PREFIX=/home/rmaxwell/aspect-stack-impi-gcc6
 CPU=40
 
 # load modules
 module purge
-module load openmpi-2.0/gcc-6.3.0
+module load impi local-gcc-6.3.0
 
 # create the installation directory for all programs
 mkdir $INSTALL_PREFIX
+mkdir $BUILD_DIR
 
 # download and build p4est
 cd $BUILD_DIR
@@ -41,39 +42,43 @@ export P4EST_DIR=$INSTALL_PREFIX/p4est-$P4EST_VERSION && \
 
 # download and build netcdf
 # download and build netcdf and netcdf-cxx4
-VER=4.4.1.1
-wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VER.tar.gz && \
-tar -xzf netcdf-$VER.tar.gz && \
-cd netcdf-$VER && \
-mkdir build && cd build && \
-    cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_COMPILER=mpicc \
-    -DCMAKE_CXX_COMPILER=mpicc \
-    -DCMAKE_PREFIX_PATH=$HDF5_DIR \
-    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX/netcdf-$VER \
-    -DENABLE_NETCDF_4=ON \
-    .. && \
-    make -j$CPU install && \
-    cd $BUILD_DIR && \
-    rm -rf netcdf-$VER netcdf-$VER.tar.gz
-NETCDF_DIR=$INSTALL_PREFIX/netcdf-$VER
+#export VER=4.4.1.1
+#wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VER.tar.gz && \
+#tar -xzf netcdf-$VER.tar.gz && \
+#cd netcdf-$VER && \
+#mkdir build && cd build && \
+#    cmake \
+#    -DCMAKE_BUILD_TYPE=Release \
+#    -DCMAKE_C_COMPILER=mpicc \
+#    -DCMAKE_CXX_COMPILER=mpicc \
+#    -DCMAKE_PREFIX_PATH=$HDF5_DIR \
+#    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX/netcdf \
+#    -DENABLE_NETCDF_4=ON \
+#    .. && \
+#    make -j$CPU install && \
+#    cd $BUILD_DIR && \
+#    rm -rf netcdf-$VER netcdf-$VER.tar.gz
+#NETCDF_DIR=$INSTALL_PREFIX/netcdf
 
-NETCDF_CXX_VER=4.3.0
-cd $BUILD_DIR
-wget https://github.com/Unidata/netcdf-cxx4/archive/v4.3.0.tar.gz && \
-tar -xzf v4.3.0.tar.gz && \
-cd netcdf-cxx4-$NETCDF_CXX_VER && \
-mkdir build && cd build && \
-cmake \
-    -DCMAKE_PREFIX_PATH=$NETCDF_DIR \
-    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX/netcdf-cxx4-$NETCDF_CXX_VER \
-    -D CMAKE_CXX_FLAGS="-O3" \
-    -D CMAKE_C_FLAGS="-O3" \
-    ..
-make -j$CPU install && \
-    cd $BUILD_DIR && \
-    rm -rf netcdf-cxx4-$NETCDF_CXX_VER
+#cd $BUILD_DIR
+#NETCDF_CXX_VER=4.2
+#CPPFLAGS="-I/home/rmaxwell/aspect-stack/netcdf/include" LDFLAGS="-L/home/rmaxwell/aspect-stack/netcdf/lib64" CC=mpicc CXX=mpic++ ./configure --prefix=/home/rmaxwell/aspect-stack/netcdf --libdir=/home/rmaxwell/aspect-stack/netcdf/lib64
+
+#cd $BUILD_DIR
+#wget https://github.com/Unidata/netcdf-cxx4/archive/v4.3.0.tar.gz && \
+#tar -xzf v4.3.0.tar.gz && \
+#cd netcdf-cxx4-$NETCDF_CXX_VER && \
+#mkdir build && cd build && \
+#cmake \
+#    -DCMAKE_PREFIX_PATH=$NETCDF_DIR \
+#    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX/netcdf-cxx4-$NETCDF_CXX_VER \
+#    -D CMAKE_CXX_FLAGS="-O3" \
+#    -D CMAKE_C_FLAGS="-O3" \
+#    ..
+#make -j$CPU install && \
+#    cd $BUILD_DIR && \
+#    rm -rf netcdf-cxx4-$NETCDF_CXX_VER
+#NETCDF_CXX_DIR=$INSTALL_PREFIX/netcdf-cxx4-$NETCDF_CXX_VER
 
 # download and build trilinos
 export TRILINOS_VERSION=12-8-1
@@ -146,10 +151,9 @@ git clone https://github.com/dealii/dealii.git dealii-$VER-src && \
           -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
           -DTRILINOS_DIR=$TRILINOS_DIR \
           -DP4EST_DIR=$P4EST_DIR \
-          -DHDF5_DIR=$HDF5_DIR \
           ../ && \
-    make -j$CPU install && \
-    cd $BUILD_DIR && rm -rf dealii-$VER-src && \
+    make -j$CPU install
+#    cd $BUILD_DIR && rm -rf dealii-$VER-src
 
 export DEAL_II_DIR=$INSTALL_PREFIX/dealii-$VER
 
@@ -161,19 +165,20 @@ git clone https://github.com/geodynamics/aspect.git aspect-src && \
     cmake -DDEAL_II_DIR=$DEAL_II_DIR \
           -DCMAKE_BUILD_TYPE=Release \
     ..
-    make -j$CPU
+    make -j $CPU
     mkdir $INSTALL_PREFIX/aspect
     mv aspect $INSTALL_PREFIX/aspect.fast
     cd .. && \
 	rm -rf build
+
     mkdir build && cd build && \
 	cmake -DDEAL_II_DIR=$DEAL_II_DIR \
         -DCMAKE_BUILD_TYPE=Debug \
 	..
-    make -j$CPU && \
+    make -j $CPU && \
 	mv aspect $INSTALL_PREFIX/aspect.debug 
-    cd .. && \
-	rm -rf build
-    cd $BUILD_DIR && \
-	rm -rf aspect-src
+#    cd .. && \
+#	rm -rf build
+#    cd $BUILD_DIR && \
+#	rm -rf aspect-src
     
